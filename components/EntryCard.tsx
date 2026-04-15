@@ -15,153 +15,51 @@ export default function EntryCard({ entry, hasVoted, onVote, votedEntryId }: Ent
   const [voting, setVoting] = useState(false)
   const [localVoteCount, setLocalVoteCount] = useState(entry.vote_count ?? 0)
   const [pulseKey, setPulseKey] = useState(0)
-
   const isMyVote = votedEntryId === entry.id
 
   async function handleVote() {
     if (hasVoted || voting) return
     setVoting(true)
-
-    // Get/create voter fingerprint
     let fingerprint = localStorage.getItem('vmf_voter_id')
-    if (!fingerprint) {
-      fingerprint = crypto.randomUUID()
-      localStorage.setItem('vmf_voter_id', fingerprint)
-    }
-
-    const { error } = await supabase.from('votes').insert({
-      entry_id: entry.id,
-      category: entry.category,
-      voter_fingerprint: fingerprint,
-    })
-
-    if (!error) {
-      setLocalVoteCount(c => c + 1)
-      setPulseKey(k => k + 1)
-      onVote(entry.id)
-    }
+    if (!fingerprint) { fingerprint = crypto.randomUUID(); localStorage.setItem('vmf_voter_id', fingerprint) }
+    const { error } = await supabase.from('votes').insert({ entry_id: entry.id, category: entry.category, voter_fingerprint: fingerprint })
+    if (!error) { setLocalVoteCount(c => c + 1); setPulseKey(k => k + 1); onVote(entry.id) }
     setVoting(false)
   }
 
   return (
     <>
-      <div
-        className="entry-card rounded-sm overflow-hidden"
-        style={{
-          background: 'white',
-          border: isMyVote ? '2px solid var(--maple-amber)' : '2px solid rgba(74,44,10,0.1)',
-          boxShadow: isMyVote
-            ? '0 4px 20px rgba(196,115,26,0.25)'
-            : '0 2px 12px rgba(74,44,10,0.08)',
-        }}
-      >
-        {/* Image entries */}
+      <article aria-label={`${entry.title} by ${entry.contestant_name}${isMyVote ? ' — your vote' : ''}`} className="entry-card" style={{ borderRadius: '4px', overflow: 'hidden', background: 'white', border: isMyVote ? '2px solid #C4871A' : '2px solid rgba(44,95,46,0.1)', boxShadow: isMyVote ? '0 4px 20px rgba(196,135,26,0.2)' : '0 2px 12px rgba(44,95,46,0.08)' }}>
         {entry.image_url && (
-          <div
-            className="relative cursor-zoom-in overflow-hidden group"
-            style={{ aspectRatio: '4/3', background: '#f5ede0' }}
-            onClick={() => setLightboxOpen(true)}
-          >
-            <img
-              src={entry.image_url}
-              alt={entry.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-              style={{ background: 'rgba(28,18,8,0.35)' }}>
-              <span className="text-white text-sm tracking-widest uppercase"
-                style={{ fontFamily: 'Source Serif 4, serif', letterSpacing: '0.15em' }}>
-                Enlarge ↗
-              </span>
+          <button onClick={() => setLightboxOpen(true)} aria-label={`Enlarge image: ${entry.title} by ${entry.contestant_name}`} style={{ display: 'block', width: '100%', border: 'none', padding: 0, cursor: 'zoom-in', position: 'relative', aspectRatio: '4/3', background: '#f5ede0', overflow: 'hidden' }}>
+            <img src={entry.image_url} alt={`${entry.title} by ${entry.contestant_name}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(28,18,8,0.35)', opacity: 0, transition: 'opacity 0.2s' }} onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'} onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '0'}>
+              <span style={{ color: 'white', fontSize: '13px', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Source Serif 4, serif' }}>Enlarge ↗</span>
             </div>
-          </div>
+          </button>
         )}
-
-        {/* Poem entries */}
         {entry.poem_text && (
-          <div
-            className="p-5 italic leading-relaxed text-sm"
-            style={{
-              background: 'linear-gradient(135deg, #faf3e0, #f5e8c8)',
-              borderBottom: '1px solid rgba(196,115,26,0.2)',
-              fontFamily: 'Playfair Display, Georgia, serif',
-              color: 'var(--maple-dark)',
-              minHeight: '140px',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
+          <div style={{ padding: '20px', background: 'linear-gradient(135deg, #faf3e0, #f5e8c8)', borderBottom: '1px solid rgba(196,135,26,0.2)', fontFamily: 'Playfair Display, Georgia, serif', fontStyle: 'italic', fontSize: '14px', lineHeight: 1.8, color: '#1a2e1a', whiteSpace: 'pre-wrap', minHeight: '120px' }}>
             {entry.poem_text}
           </div>
         )}
-
-        {/* Card footer */}
-        <div className="p-4">
-          <div className="mb-3">
-            <h3
-              className="font-display font-bold text-base leading-tight"
-              style={{ color: 'var(--maple-dark)' }}
-            >
-              {entry.title}
-            </h3>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--maple-amber)' }}>
-              {entry.contestant_name}
-            </p>
-            {entry.description && (
-              <p className="text-xs mt-1.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                {entry.description}
-              </p>
-            )}
+        <div style={{ padding: '16px' }}>
+          <div style={{ marginBottom: '12px' }}>
+            <h3 className="font-display" style={{ fontSize: '16px', fontWeight: 700, color: '#1a2e1a', lineHeight: 1.3, margin: '0 0 4px' }}>{entry.title}</h3>
+            <p style={{ fontSize: '12px', color: '#C4871A', margin: 0 }}>{entry.contestant_name}</p>
+            {entry.description && <p style={{ fontSize: '12px', color: '#4a6b4c', marginTop: '6px', lineHeight: 1.5 }}>{entry.description}</p>}
           </div>
-
-          <div className="flex items-center justify-between">
-            {/* Vote count */}
-            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <span
-                key={pulseKey}
-                className={pulseKey > 0 ? 'voted-pulse inline-block' : ''}
-                style={{ fontWeight: 600, color: 'var(--maple-amber)' }}
-              >
-                {localVoteCount}
-              </span>{' '}
-              {localVoteCount === 1 ? 'vote' : 'votes'}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <span style={{ fontSize: '12px', color: '#4a6b4c' }} aria-live="polite" aria-atomic="true">
+              <span key={pulseKey} className={pulseKey > 0 ? 'voted-pulse' : ''} style={{ fontWeight: 600, color: '#C4871A' }}>{localVoteCount}</span>{' '}{localVoteCount === 1 ? 'vote' : 'votes'}
             </span>
-
-            {/* Vote button */}
-            <button
-              onClick={handleVote}
-              disabled={hasVoted || voting}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-sm text-xs font-semibold transition-all duration-200"
-              style={{
-                fontFamily: 'Source Serif 4, serif',
-                letterSpacing: '0.06em',
-                background: isMyVote
-                  ? 'var(--maple-amber)'
-                  : hasVoted
-                  ? 'transparent'
-                  : '#2C5F2E',
-                color: isMyVote
-                  ? 'white'
-                  : hasVoted
-                  ? 'var(--maple-brown)'
-                  : 'white',
-                border: hasVoted && !isMyVote ? '1px solid var(--maple-brown)' : 'none',
-                cursor: hasVoted ? 'default' : 'pointer',
-                opacity: voting ? 0.7 : 1,
-              }}
-            >
+            <button onClick={handleVote} disabled={hasVoted || voting} aria-label={isMyVote ? `Your vote for ${entry.title}` : hasVoted ? 'You have already voted in this category' : `Vote for ${entry.title} by ${entry.contestant_name}`} aria-pressed={isMyVote} style={{ padding: '10px 20px', borderRadius: '2px', fontSize: '13px', fontWeight: 600, fontFamily: 'Source Serif 4, serif', cursor: hasVoted ? 'default' : 'pointer', opacity: voting ? 0.7 : 1, border: hasVoted && !isMyVote ? '1px solid rgba(44,95,46,0.3)' : 'none', background: isMyVote ? '#C4871A' : hasVoted ? 'transparent' : '#2C5F2E', color: isMyVote ? 'white' : hasVoted ? '#4a6b4c' : 'white', minWidth: '90px', textAlign: 'center' }}>
               {isMyVote ? '★ Your Vote' : hasVoted ? 'Voted' : voting ? '…' : '♥ Vote'}
             </button>
           </div>
         </div>
-      </div>
-
-      {lightboxOpen && entry.image_url && (
-        <Lightbox
-          src={entry.image_url}
-          alt={`${entry.title} by ${entry.contestant_name}`}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
+      </article>
+      {lightboxOpen && entry.image_url && <Lightbox src={entry.image_url} alt={`${entry.title} by ${entry.contestant_name}`} onClose={() => setLightboxOpen(false)} />}
     </>
   )
 }
