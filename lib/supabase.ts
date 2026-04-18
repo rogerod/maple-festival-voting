@@ -21,8 +21,8 @@ export interface Entry {
 }
 
 export const CATEGORIES: { id: Category; label: string; icon: string; hasImage: boolean }[] = [
+  { id: 'window_display', label: 'Best Window Display', icon: '🪟', hasImage: true },
   { id: 'art', label: 'Best Art', icon: '🎨', hasImage: true },
   { id: 'poem', label: 'Best Poem', icon: '📜', hasImage: false },
-  { id: 'window_display', label: 'Best Window Display', icon: '🪟', hasImage: true },
   { id: 'photography', label: 'Best Photography', icon: '📷', hasImage: true },
 ]
